@@ -7,6 +7,7 @@ export default function HomePage() {
   const SEU_NUMERO_WHATSAPP = '5516991022319'; 
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -15,16 +16,21 @@ export default function HomePage() {
     company: ''
   });
 
+  const handleOpenModal = (planName = '') => {
+    setSelectedPlan(planName);
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsSubmitted(true);
 
-    // Formata a mensagem para enviar diretamente para o seu WhatsApp
-    const mensagem = `Olá! Gostaria de agendar uma demonstração VIP da CEF.AI.%0A%0A*Dados da Empresa:*%0A• *Nome:* ${encodeURIComponent(formData.name)}%0A• *Empresa:* ${encodeURIComponent(formData.company)}%0A• *E-mail:* ${encodeURIComponent(formData.email)}%0A• *WhatsApp:* ${encodeURIComponent(formData.phone)}`;
+    const planoTexto = selectedPlan ? `%0A• *Plano de Interesse:* ${encodeURIComponent(selectedPlan)}` : '';
+
+    const mensagem = `Olá! Gostaria de agendar uma demonstração VIP da CEF.AI.${planoTexto}%0A%0A*Dados da Empresa:*%0A• *Nome:* ${encodeURIComponent(formData.name)}%0A• *Empresa:* ${encodeURIComponent(formData.company)}%0A• *E-mail:* ${encodeURIComponent(formData.email)}%0A• *WhatsApp:* ${encodeURIComponent(formData.phone)}`;
 
     const urlWhatsApp = `https://wa.me/${SEU_NUMERO_WHATSAPP}?text=${mensagem}`;
 
-    // Abre o WhatsApp no telemóvel do cliente
     window.open(urlWhatsApp, '_blank');
   };
 
@@ -90,7 +96,7 @@ export default function HomePage() {
         </div>
 
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => handleOpenModal('Acesso Corporativo')}
           style={{
             padding: '10px 20px',
             borderRadius: '10px',
@@ -154,7 +160,7 @@ export default function HomePage() {
         </p>
 
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => handleOpenModal('Demonstração VIP')}
           style={{
             padding: '16px 36px',
             borderRadius: '12px',
@@ -251,6 +257,148 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* PASSO 3: TABELA CORPORATIVA DE PLANOS & PREÇOS (PRICING) */}
+      <section style={{ maxWidth: '1100px', margin: '0 auto 100px', padding: '0 20px', position: 'relative', zIndex: 1 }}>
+        <div style={{ textAlign: 'center', marginBottom: '50px' }}>
+          <span style={{ color: '#a855f7', fontWeight: '700', fontSize: '14px', letterSpacing: '1px' }}>
+            INVESTIMENTO CORPORATIVO
+          </span>
+          <h2 style={{ fontSize: '36px', fontWeight: '800', marginTop: '8px' }}>
+            Planos Dimensionados para o seu Negócio
+          </h2>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '24px',
+          alignItems: 'center'
+        }}>
+          {/* Plano Starter */}
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.6)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '24px',
+            padding: '36px 28px',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#cbd5e1' }}>Startup / Starter</h3>
+            <div style={{ fontSize: '38px', fontWeight: '900', margin: '16px 0 8px', color: '#fff' }}>
+              R$ 497 <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '400' }}>/ mês</span>
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '24px' }}>Ideal para empresas que querem automatizar o WhatsApp inicial.</p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px 0', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px', color: '#cbd5e1' }}>
+              <li>✓ Até 1.000 atendimentos/mês</li>
+              <li>✓ 1 Agente de IA Dedicado</li>
+              <li>✓ Treinamento com Base de Conhecimento</li>
+              <li>✓ Suporte por E-mail e WhatsApp</li>
+            </ul>
+            <button 
+              onClick={() => handleOpenModal('Plano Starter (R$ 497/mês)')}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '10px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}>
+              Selecionar Starter
+            </button>
+          </div>
+
+          {/* Plano Pro (Destaque VIP) */}
+          <div style={{
+            background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%)',
+            border: '2px solid #a855f7',
+            borderRadius: '24px',
+            padding: '44px 28px',
+            position: 'relative',
+            boxShadow: '0 0 40px rgba(168, 85, 247, 0.25)'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '-14px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+              padding: '4px 16px',
+              borderRadius: '20px',
+              fontSize: '11px',
+              fontWeight: '800',
+              letterSpacing: '1px',
+              color: '#fff'
+            }}>
+              MAIS POPULAR
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#fff' }}>Pro Enterprise</h3>
+            <div style={{ fontSize: '42px', fontWeight: '900', margin: '16px 0 8px', color: '#fff' }}>
+              R$ 1.297 <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '400' }}>/ mês</span>
+            </div>
+            <p style={{ color: '#cbd5e1', fontSize: '13px', marginBottom: '24px' }}>Para empresas em escala que necessitam de alta capacidade e métricas.</p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px 0', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px', color: '#f1f5f9' }}>
+              <li>⚡ Atendimentos Ilimitados</li>
+              <li>⚡ Agentes de IA Ilimitados</li>
+              <li>⚡ Painel Multi-Tenant com Métricas (ARR/Churn/LTV)</li>
+              <li>⚡ Integração Nativa com CRM e Webhooks</li>
+              <li>⚡ Suporte Prioritário VIP 24/7</li>
+            </ul>
+            <button 
+              onClick={() => handleOpenModal('Plano Pro Enterprise (R$ 1.297/mês)')}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                color: '#fff',
+                border: 'none',
+                fontWeight: '700',
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(168, 85, 247, 0.4)'
+              }}>
+              Contratar Pro Enterprise 🚀
+            </button>
+          </div>
+
+          {/* Plano Custom */}
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.6)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '24px',
+            padding: '36px 28px',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#cbd5e1' }}>Corporate Custom</h3>
+            <div style={{ fontSize: '32px', fontWeight: '900', margin: '16px 0 8px', color: '#fff' }}>
+              Sob Consulta
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '24px' }}>Soluções sob medida para grandes corporações e redes.</p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px 0', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px', color: '#cbd5e1' }}>
+              <li>✓ Servidores Dedicados On-Premise</li>
+              <li>✓ SLA de Atendimento Garantido</li>
+              <li>✓ Modelos de IA Treinados Sob Medida</li>
+              <li>✓ Gerente de Conta Dedicado</li>
+            </ul>
+            <button 
+              onClick={() => handleOpenModal('Plano Corporate Custom')}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '10px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}>
+              Falar com Consultor
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* MODAL POPUP DE CAPTURA DE LEADS */}
       {isModalOpen && (
         <div style={{
@@ -295,11 +443,16 @@ export default function HomePage() {
             {!isSubmitted ? (
               <>
                 <div style={{ fontSize: '28px', marginBottom: '8px' }}>🚀</div>
-                <h3 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#fff' }}>
+                <h3 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px', color: '#fff' }}>
                   Solicitar Demonstração VIP
                 </h3>
-                <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
-                  Preencha os dados da sua empresa para ser direcionado ao atendimento VIP.
+                {selectedPlan && (
+                  <div style={{ color: '#a855f7', fontSize: '13px', fontWeight: '700', marginBottom: '12px' }}>
+                    Interesse: {selectedPlan}
+                  </div>
+                )}
+                <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '20px' }}>
+                  Preencha os dados para ser direcionado ao atendimento VIP no WhatsApp.
                 </p>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -310,7 +463,7 @@ export default function HomePage() {
                     <input 
                       type="text" 
                       required 
-                      placeholder="Ex: Carlos Eduardo"
+                      placeholder="Ex: Carlos Ferreira"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                       style={{
