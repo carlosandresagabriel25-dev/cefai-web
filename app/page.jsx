@@ -3,6 +3,9 @@
 import { useState } from 'react';
 
 export default function HomePage() {
+  // ⚠️ COLOQUE O SEU NÚMERO DE WHATSAPP AQUI (Com 55 + DDD + Número)
+  const SEU_NUMERO_WHATSAPP = '5516991022319'; 
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
@@ -15,6 +18,14 @@ export default function HomePage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsSubmitted(true);
+
+    // Formata a mensagem para enviar diretamente para o seu WhatsApp
+    const mensagem = `Olá! Gostaria de agendar uma demonstração VIP da CEF.AI.%0A%0A*Dados da Empresa:*%0A• *Nome:* ${encodeURIComponent(formData.name)}%0A• *Empresa:* ${encodeURIComponent(formData.company)}%0A• *E-mail:* ${encodeURIComponent(formData.email)}%0A• *WhatsApp:* ${encodeURIComponent(formData.phone)}`;
+
+    const urlWhatsApp = `https://wa.me/${SEU_NUMERO_WHATSAPP}?text=${mensagem}`;
+
+    // Abre o WhatsApp no telemóvel do cliente
+    window.open(urlWhatsApp, '_blank');
   };
 
   const closeModal = () => {
@@ -266,7 +277,6 @@ export default function HomePage() {
             position: 'relative',
             boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(99, 102, 241, 0.2)'
           }}>
-            {/* Fechar Modal */}
             <button 
               onClick={closeModal}
               style={{
@@ -289,7 +299,7 @@ export default function HomePage() {
                   Solicitar Demonstração VIP
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
-                  Preencha os dados da sua empresa para receber acesso antecipado à plataforma.
+                  Preencha os dados da sua empresa para ser direcionado ao atendimento VIP.
                 </p>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -391,26 +401,26 @@ export default function HomePage() {
                       marginTop: '8px',
                       padding: '14px',
                       borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                      background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
                       color: '#fff',
                       border: 'none',
                       fontWeight: '700',
                       fontSize: '15px',
                       cursor: 'pointer',
-                      boxShadow: '0 4px 20px rgba(168, 85, 247, 0.4)'
+                      boxShadow: '0 4px 20px rgba(34, 197, 94, 0.4)'
                     }}>
-                    Garantir Acesso VIP 🚀
+                    Abrir no WhatsApp 💬
                   </button>
                 </form>
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
                 <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '12px', color: '#fff' }}>
-                  Solicitação Confirmada!
+                  A Redirecionar...
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
-                  Obrigado, <strong style={{ color: '#fff' }}>{formData.name}</strong>. A nossa equipa de consultoria técnica entrará em contacto para o e-mail ou WhatsApp da <strong style={{ color: '#fff' }}>{formData.company}</strong> em até 15 minutos.
+                  A sua conversa no WhatsApp com a equipa da CEF.AI foi gerada com sucesso!
                 </p>
                 <button 
                   onClick={closeModal}
