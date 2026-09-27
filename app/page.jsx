@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 export default function HomePage() {
   const SEU_NUMERO_WHATSAPP = '5516991022319'; 
@@ -24,22 +25,30 @@ export default function HomePage() {
     e.preventDefault();
     setIsSubmitted(true);
 
+    // 1. Grava a Lead diretamente no Supabase
     try {
-      const response = await fetch('/api/lead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      const { data, error } = await supabase
+        .from('whatsapp_leads')
+        .insert([
+          {
+            client_name: formData.name,
+            client_phone: formData.phone,
+            client_email: formData.email,
+            company_name: formData.company,
+            status: 'lead'
+          }
+        ]);
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('Falha ao gravar lead:', result.error);
+      if (error) {
+        console.error('Erro de inserção:', error.message);
+      } else {
+        console.log('Lead salva com sucesso:', data);
       }
     } catch (err) {
-      console.error('Erro na requisição para o servidor:', err);
+      console.error('Exceção ao salvar:', err);
     }
 
+    // 2. Redireciona para o WhatsApp
     const planoTexto = selectedPlan ? `%0A• *Plano de Interesse:* ${encodeURIComponent(selectedPlan)}` : '';
     const mensagem = `Olá! Gostaria de agendar uma demonstração VIP da CEF.AI.${planoTexto}%0A%0A*Dados da Empresa:*%0A• *Nome:* ${encodeURIComponent(formData.name)}%0A• *Empresa:* ${encodeURIComponent(formData.company)}%0A• *E-mail:* ${encodeURIComponent(formData.email)}%0A• *WhatsApp:* ${encodeURIComponent(formData.phone)}`;
 
@@ -63,6 +72,7 @@ export default function HomePage() {
       overflowX: 'hidden',
       position: 'relative'
     }}>
+      {/* Background Glow */}
       <div style={{
         position: 'absolute',
         top: '-100px',
@@ -76,6 +86,7 @@ export default function HomePage() {
         zIndex: 0
       }} />
 
+      {/* Navbar */}
       <nav style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -123,6 +134,7 @@ export default function HomePage() {
         </button>
       </nav>
 
+      {/* Hero Section */}
       <section style={{
         textAlign: 'center',
         padding: '90px 20px 50px',
@@ -186,6 +198,7 @@ export default function HomePage() {
         </button>
       </section>
 
+      {/* Pricing Section */}
       <section style={{ maxWidth: '1100px', margin: '0 auto 100px', padding: '0 20px', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: '50px' }}>
           <span style={{ color: '#a855f7', fontWeight: '700', fontSize: '14px', letterSpacing: '1px' }}>
@@ -202,6 +215,7 @@ export default function HomePage() {
           gap: '24px',
           alignItems: 'center'
         }}>
+          {/* Starter */}
           <div style={{
             background: 'rgba(15, 23, 42, 0.6)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -230,6 +244,7 @@ export default function HomePage() {
             </button>
           </div>
 
+          {/* Pro Enterprise */}
           <div style={{
             background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%)',
             border: '2px solid #a855f7',
@@ -260,6 +275,7 @@ export default function HomePage() {
             </button>
           </div>
 
+          {/* Custom */}
           <div style={{
             background: 'rgba(15, 23, 42, 0.6)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -290,6 +306,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* MODAL POPUP */}
       {isModalOpen && (
         <div style={{
           position: 'fixed',
@@ -336,6 +353,7 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', padding: '40px 20px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
         <p>© 2026 CEF.AI — All Systems Operational</p>
       </footer>
