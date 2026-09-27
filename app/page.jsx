@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
 
 export default function HomePage() {
   const SEU_NUMERO_WHATSAPP = '5516991022319'; 
@@ -25,23 +24,18 @@ export default function HomePage() {
     e.preventDefault();
     setIsSubmitted(true);
 
-    // 1. Grava a Lead no Supabase
+    // 1. Envia a Lead para o nosso backend no Next.js
     try {
-      if (supabase) {
-        const { error } = await supabase.from('whatsapp_leads').insert([
-          {
-            client_name: formData.name,
-            client_phone: formData.phone,
-            status: 'lead'
-          }
-        ]);
-        if (error) console.error('Erro ao gravar no Supabase:', error);
-      }
+      await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
     } catch (err) {
-      console.error('Erro na conexão:', err);
+      console.error('Erro de envio:', err);
     }
 
-    // 2. Redireciona para o WhatsApp
+    // 2. Prepara e abre o WhatsApp
     const planoTexto = selectedPlan ? `%0A• *Plano de Interesse:* ${encodeURIComponent(selectedPlan)}` : '';
     const mensagem = `Olá! Gostaria de agendar uma demonstração VIP da CEF.AI.${planoTexto}%0A%0A*Dados da Empresa:*%0A• *Nome:* ${encodeURIComponent(formData.name)}%0A• *Empresa:* ${encodeURIComponent(formData.company)}%0A• *E-mail:* ${encodeURIComponent(formData.email)}%0A• *WhatsApp:* ${encodeURIComponent(formData.phone)}`;
 
