@@ -25,21 +25,23 @@ export default function HomePage() {
     e.preventDefault();
     setIsSubmitted(true);
 
-    // Gravação no Supabase com tratamento preventivo de exceção
+    // 1. Grava a Lead no Supabase
     try {
       if (supabase) {
-        await supabase.from('whatsapp_leads').insert([
+        const { error } = await supabase.from('whatsapp_leads').insert([
           {
             client_name: formData.name,
             client_phone: formData.phone,
             status: 'lead'
           }
         ]);
+        if (error) console.error('Erro ao gravar no Supabase:', error);
       }
     } catch (err) {
-      console.error('Erro de gravação:', err);
+      console.error('Erro na conexão:', err);
     }
 
+    // 2. Redireciona para o WhatsApp
     const planoTexto = selectedPlan ? `%0A• *Plano de Interesse:* ${encodeURIComponent(selectedPlan)}` : '';
     const mensagem = `Olá! Gostaria de agendar uma demonstração VIP da CEF.AI.${planoTexto}%0A%0A*Dados da Empresa:*%0A• *Nome:* ${encodeURIComponent(formData.name)}%0A• *Empresa:* ${encodeURIComponent(formData.company)}%0A• *E-mail:* ${encodeURIComponent(formData.email)}%0A• *WhatsApp:* ${encodeURIComponent(formData.phone)}`;
 
