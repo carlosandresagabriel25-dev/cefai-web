@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabase';
 
 export default function HomePage() {
   const SEU_NUMERO_WHATSAPP = '5516991022319'; 
@@ -25,7 +25,7 @@ export default function HomePage() {
     e.preventDefault();
     setIsSubmitted(true);
 
-    // 1. Salva o Lead no banco de dados Supabase
+    // Gravação no Supabase com tratamento preventivo de exceção
     try {
       if (supabase) {
         await supabase.from('whatsapp_leads').insert([
@@ -36,16 +36,14 @@ export default function HomePage() {
           }
         ]);
       }
-    } catch (error) {
-      console.error('Erro ao gravar no Supabase:', error);
+    } catch (err) {
+      console.error('Erro de gravação:', err);
     }
 
-    // 2. Formata e redireciona para o WhatsApp
     const planoTexto = selectedPlan ? `%0A• *Plano de Interesse:* ${encodeURIComponent(selectedPlan)}` : '';
     const mensagem = `Olá! Gostaria de agendar uma demonstração VIP da CEF.AI.${planoTexto}%0A%0A*Dados da Empresa:*%0A• *Nome:* ${encodeURIComponent(formData.name)}%0A• *Empresa:* ${encodeURIComponent(formData.company)}%0A• *E-mail:* ${encodeURIComponent(formData.email)}%0A• *WhatsApp:* ${encodeURIComponent(formData.phone)}`;
 
     const urlWhatsApp = `https://wa.me/${SEU_NUMERO_WHATSAPP}?text=${mensagem}`;
-
     window.open(urlWhatsApp, '_blank');
   };
 
