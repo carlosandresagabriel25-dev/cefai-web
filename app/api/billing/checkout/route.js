@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { createOrGetCustomer, createSubscription } from '@/lib/billing/asaas';
+import { createOrGetCustomer, createSubscription, getSubscriptionPayments } from '@/lib/billing/asaas';
 import { supabase } from '@/lib/supabase';
 
 export async function POST(request) {
@@ -14,7 +14,7 @@ export async function POST(request) {
     }
 
     if (!cpfCnpj) {
-      return NextResponse.json({ error: 'O CPF ou CNPJ do cliente é obrigatório para emissão de fatura.' }, { status: 400 });
+      return NextResponse.json({ error: 'O CPF ou CNPJ é obrigatório para emissão de fatura.' }, { status: 400 });
     }
 
     const planValue = planId === 'pro' ? 1297.00 : 497.00;
@@ -23,14 +23,32 @@ export async function POST(request) {
     // 1. Criar ou Obter Cliente no Asaas
     const customer = await createOrGetCustomer({ name, email, phone, company, cpfCnpj });
 
-    // 2. Criar Assinatura no Asaas
+    // 2. Criar Assinatura Recorrente no Asaas
     const subscription = await createSubscription({
       customerId: customer.id,
       planValue: planValue,
       planName: planName
     });
 
-    // 3. Registar no Supabase (opcional/resiliente)
+    // 3. Obter a Fatura/Cobrança real gerada para a assinatura (pay_...)
+    let invoiceUrl = subscription.invoiceUrl;
+
+    if (!invoiceUrl) {
+      try {
+        const paymentsData = await getSubscriptionPayments(subscription.id);
+        if (paymentsData && paymentsData.data && paymentsData.data.length > 0) {
+          invoiceUrl = paymentsData.data[0].invoiceUrl || paymentsData.data[0].bankSlipUrl;
+        }
+      } catch (pErr) {
+        console.warn('Aviso: Não foi possível obter cobrança associada:', pErr);
+      }
+    }
+
+    if (!invoiceUrl) {
+      return NextResponse.json({ error: 'Não foi possível obter o link da fatura no Asaas.' }, { status: 500 });
+    }
+
+    // 4. Registar Assinatura no Supabase
     if (supabase) {
       try {
         await supabase.from('billing_subscriptions').insert([{
@@ -57,7 +75,7 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       subscriptionId: subscription.id,
-      invoiceUrl: subscription.invoiceUrl || `https://sandbox.asaas.com/i/${subscription.id}`
+      invoiceUrl: invoiceUrl
     });
 
   } catch (error) {
