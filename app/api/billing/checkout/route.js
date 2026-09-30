@@ -7,17 +7,21 @@ import { supabase } from '@/lib/supabase';
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, email, phone, company, planId } = body;
+    const { name, email, phone, company, cpfCnpj, planId } = body;
 
     if (!email || !name) {
       return NextResponse.json({ error: 'Nome e e-mail são obrigatórios.' }, { status: 400 });
+    }
+
+    if (!cpfCnpj) {
+      return NextResponse.json({ error: 'O CPF ou CNPJ do cliente é obrigatório para emissão de fatura.' }, { status: 400 });
     }
 
     const planValue = planId === 'pro' ? 1297.00 : 497.00;
     const planName = planId === 'pro' ? 'Pro Enterprise' : 'Starter';
 
     // 1. Criar ou Obter Cliente no Asaas
-    const customer = await createOrGetCustomer({ name, email, phone, company });
+    const customer = await createOrGetCustomer({ name, email, phone, company, cpfCnpj });
 
     // 2. Criar Assinatura no Asaas
     const subscription = await createSubscription({
@@ -26,7 +30,7 @@ export async function POST(request) {
       planName: planName
     });
 
-    // 3. Registar no Supabase (se a instância do Supabase estiver disponível)
+    // 3. Registar no Supabase (opcional/resiliente)
     if (supabase) {
       try {
         await supabase.from('billing_subscriptions').insert([{
