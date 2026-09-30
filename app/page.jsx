@@ -12,7 +12,8 @@ export default function HomePage() {
     name: '',
     email: '',
     phone: '',
-    company: ''
+    company: '',
+    cpfCnpj: ''
   });
 
   const handleOpenModal = (planId = 'starter', planTitle = 'Starter') => {
@@ -26,7 +27,6 @@ export default function HomePage() {
     setIsLoading(true);
 
     try {
-      // 1. Tenta gravar a lead no Supabase (se falhar, não bloqueia o checkout)
       if (supabase) {
         try {
           await supabase.from('whatsapp_leads').insert([
@@ -43,7 +43,6 @@ export default function HomePage() {
         }
       }
 
-      // 2. Chama a Rota de Checkout
       const response = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -52,11 +51,11 @@ export default function HomePage() {
           email: formData.email,
           phone: formData.phone,
           company: formData.company,
+          cpfCnpj: formData.cpfCnpj,
           planId: selectedPlanId
         })
       });
 
-      // Trata a resposta com segurança (evita falha se o servidor devolver HTML)
       const responseText = await response.text();
       let data;
       try {
@@ -73,7 +72,6 @@ export default function HomePage() {
         return;
       }
 
-      // 3. Redireciona para a Fatura no Asaas
       if (data.invoiceUrl) {
         window.location.href = data.invoiceUrl;
       } else {
@@ -370,6 +368,7 @@ export default function HomePage() {
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <input type="text" required placeholder="Nome Completo" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
               <input type="email" required placeholder="E-mail Corporativo" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
+              <input type="text" required placeholder="CPF ou CNPJ" value={formData.cpfCnpj} onChange={(e) => setFormData({...formData, cpfCnpj: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
               <input type="text" required placeholder="Nome da Empresa" value={formData.company} onChange={(e) => setFormData({...formData, company: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
               <input type="tel" required placeholder="WhatsApp com DDD" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
 
