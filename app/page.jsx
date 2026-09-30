@@ -4,11 +4,10 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 export default function HomePage() {
-  const SEU_NUMERO_WHATSAPP = '5516991022319'; 
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState('starter');
+  const [selectedPlanTitle, setSelectedPlanTitle] = useState('Starter');
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,49 +15,66 @@ export default function HomePage() {
     company: ''
   });
 
-  const handleOpenModal = (planName = '') => {
-    setSelectedPlan(planName);
+  const handleOpenModal = (planId = 'starter', planTitle = 'Starter') => {
+    setSelectedPlanId(planId);
+    setSelectedPlanTitle(planTitle);
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    setIsLoading(true);
 
-    // 1. Grava a Lead diretamente no Supabase
     try {
-      const { data, error } = await supabase
-        .from('whatsapp_leads')
-        .insert([
-          {
-            client_name: formData.name,
-            client_phone: formData.phone,
-            client_email: formData.email,
-            company_name: formData.company,
-            status: 'lead'
-          }
-        ]);
+      // 1. Persiste a Lead no Supabase
+      await supabase.from('whatsapp_leads').insert([
+        {
+          client_name: formData.name,
+          client_phone: formData.phone,
+          client_email: formData.email,
+          company_name: formData.company,
+          status: 'lead'
+        }
+      ]);
 
-      if (error) {
-        console.error('Erro de inserção:', error.message);
-      } else {
-        console.log('Lead salva com sucesso:', data);
+      // 2. Chama a Rota do Billing Service (/api/billing/checkout)
+      const response = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          planId: selectedPlanId
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        alert(`Erro no checkout: ${data.error || 'Tente novamente.'}`);
+        setIsLoading(false);
+        return;
       }
+
+      // 3. Redireciona para o Link de Pagamento do Asaas Sandbox (Pix / Cartão / Boleto)
+      if (data.invoiceUrl) {
+        window.location.href = data.invoiceUrl;
+      } else {
+        alert('Assinatura criada com sucesso!');
+      }
+
     } catch (err) {
-      console.error('Exceção ao salvar:', err);
+      console.error('Exceção ao processar assinatura:', err);
+      alert('Ocorreu um erro ao conectar ao servidor de pagamentos.');
+      setIsLoading(false);
     }
-
-    // 2. Redireciona para o WhatsApp
-    const planoTexto = selectedPlan ? `%0A• *Plano de Interesse:* ${encodeURIComponent(selectedPlan)}` : '';
-    const mensagem = `Olá! Gostaria de agendar uma demonstração VIP da CEF.AI.${planoTexto}%0A%0A*Dados da Empresa:*%0A• *Nome:* ${encodeURIComponent(formData.name)}%0A• *Empresa:* ${encodeURIComponent(formData.company)}%0A• *E-mail:* ${encodeURIComponent(formData.email)}%0A• *WhatsApp:* ${encodeURIComponent(formData.phone)}`;
-
-    const urlWhatsApp = `https://wa.me/${SEU_NUMERO_WHATSAPP}?text=${mensagem}`;
-    window.open(urlWhatsApp, '_blank');
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setIsSubmitted(false);
+    setIsLoading(false);
   };
 
   return (
@@ -118,7 +134,7 @@ export default function HomePage() {
         </div>
 
         <button 
-          onClick={() => handleOpenModal('Acesso Corporativo')}
+          onClick={() => handleOpenModal('starter', 'Plano Starter')}
           style={{
             padding: '10px 20px',
             borderRadius: '10px',
@@ -182,7 +198,7 @@ export default function HomePage() {
         </p>
 
         <button 
-          onClick={() => handleOpenModal('Demonstração VIP')}
+          onClick={() => handleOpenModal('starter', 'Plano Starter (R$ 497/mês)')}
           style={{
             padding: '16px 36px',
             borderRadius: '12px',
@@ -229,7 +245,7 @@ export default function HomePage() {
             </div>
             <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '24px' }}>Ideal para empresas que querem automatizar o WhatsApp inicial.</p>
             <button 
-              onClick={() => handleOpenModal('Plano Starter (R$ 497/mês)')}
+              onClick={() => handleOpenModal('starter', 'Plano Starter (R$ 497/mês)')}
               style={{
                 width: '100%',
                 padding: '12px',
@@ -259,7 +275,7 @@ export default function HomePage() {
             </div>
             <p style={{ color: '#cbd5e1', fontSize: '13px', marginBottom: '24px' }}>Para empresas em escala que necessitam de alta capacidade e métricas.</p>
             <button 
-              onClick={() => handleOpenModal('Plano Pro Enterprise (R$ 1.297/mês)')}
+              onClick={() => handleOpenModal('pro', 'Plano Pro Enterprise (R$ 1.297/mês)')}
               style={{
                 width: '100%',
                 padding: '14px',
@@ -289,7 +305,7 @@ export default function HomePage() {
             </div>
             <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '24px' }}>Soluções sob medida para grandes corporações e redes.</p>
             <button 
-              onClick={() => handleOpenModal('Plano Corporate Custom')}
+              onClick={() => handleOpenModal('starter', 'Plano Corporate Custom')}
               style={{
                 width: '100%',
                 padding: '12px',
@@ -333,22 +349,19 @@ export default function HomePage() {
           }}>
             <button onClick={closeModal} style={{ position: 'absolute', top: '20px', right: '20px', background: 'transparent', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer' }}>✕</button>
 
-            {!isSubmitted ? (
-              <>
-                <h3 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#fff' }}>Solicitar Demonstração VIP</h3>
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <input type="text" required placeholder="Nome Completo" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
-                  <input type="email" required placeholder="E-mail Corporativo" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
-                  <input type="text" required placeholder="Nome da Empresa" value={formData.company} onChange={(e) => setFormData({...formData, company: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
-                  <input type="tel" required placeholder="WhatsApp com DDD" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
-                  <button type="submit" style={{ padding: '14px', borderRadius: '12px', background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', color: '#fff', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Abrir no WhatsApp 💬</button>
-                </form>
-              </>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#fff' }}>Redirecionando...</h3>
-              </div>
-            )}
+            <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '4px', color: '#fff' }}>Ativação de Assinatura</h3>
+            <p style={{ fontSize: '14px', color: '#a855f7', fontWeight: '600', marginBottom: '20px' }}>{selectedPlanTitle}</p>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <input type="text" required placeholder="Nome Completo" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
+              <input type="email" required placeholder="E-mail Corporativo" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
+              <input type="text" required placeholder="Nome da Empresa" value={formData.company} onChange={(e) => setFormData({...formData, company: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
+              <input type="tel" required placeholder="WhatsApp com DDD" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} style={{ padding: '12px', borderRadius: '10px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
+
+              <button type="submit" disabled={isLoading} style={{ padding: '14px', borderRadius: '12px', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', color: '#fff', border: 'none', fontWeight: '700', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}>
+                {isLoading ? 'A Gerar Fatura...' : 'Prosseguir para Pagamento 💳'}
+              </button>
+            </form>
           </div>
         </div>
       )}
