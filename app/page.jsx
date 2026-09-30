@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export default function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,18 +26,24 @@ export default function HomePage() {
     setIsLoading(true);
 
     try {
-      // 1. Persiste a Lead no Supabase
-      await supabase.from('whatsapp_leads').insert([
-        {
-          client_name: formData.name,
-          client_phone: formData.phone,
-          client_email: formData.email,
-          company_name: formData.company,
-          status: 'lead'
+      // 1. Tenta gravar a lead no Supabase (se falhar, não bloqueia o checkout)
+      if (supabase) {
+        try {
+          await supabase.from('whatsapp_leads').insert([
+            {
+              client_name: formData.name,
+              client_phone: formData.phone,
+              client_email: formData.email,
+              company_name: formData.company,
+              status: 'lead'
+            }
+          ]);
+        } catch (dbErr) {
+          console.warn('Aviso: Não foi possível gravar lead no Supabase:', dbErr);
         }
-      ]);
+      }
 
-      // 2. Chama a Rota do Billing Service (/api/billing/checkout)
+      // 2. Chama a Rota de Checkout
       const response = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -50,7 +56,16 @@ export default function HomePage() {
         })
       });
 
-      const data = await response.json();
+      // Trata a resposta com segurança (evita falha se o servidor devolver HTML)
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (pErr) {
+        alert(`Erro no servidor (${response.status}): ${responseText.substring(0, 120)}`);
+        setIsLoading(false);
+        return;
+      }
 
       if (!response.ok || data.error) {
         alert(`Erro no checkout: ${data.error || 'Tente novamente.'}`);
@@ -58,7 +73,7 @@ export default function HomePage() {
         return;
       }
 
-      // 3. Redireciona para o Link de Pagamento do Asaas Sandbox (Pix / Cartão / Boleto)
+      // 3. Redireciona para a Fatura no Asaas
       if (data.invoiceUrl) {
         window.location.href = data.invoiceUrl;
       } else {
@@ -67,7 +82,7 @@ export default function HomePage() {
 
     } catch (err) {
       console.error('Exceção ao processar assinatura:', err);
-      alert('Ocorreu um erro ao conectar ao servidor de pagamentos.');
+      alert(`Falha na ligação: ${err.message}`);
       setIsLoading(false);
     }
   };
